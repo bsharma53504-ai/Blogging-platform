@@ -5,7 +5,9 @@ dist/
 !.env.example
 __pycache__/
 *.py[cod]
-backend/uploads/*
-!backend/uploads/.gitkeep
+.venv/
+instance/
+static/uploads/*
+!static/uploads/.gitkeep
 coverage/
 npm-debug.log*

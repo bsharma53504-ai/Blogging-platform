@@ -29,7 +29,6 @@
                     {% endif %}
                     <a class="nav-link profile-link" href="{{ url_for('profile') }}">{{ current_user.username }}</a>
                     <form method="post" action="{{ url_for('logout') }}">
-                        {{ csrf_token()|default('', true) }}
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button class="btn btn-quiet btn-sm" type="submit">Sign out</button>
                     </form>

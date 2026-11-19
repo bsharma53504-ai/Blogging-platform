@@ -1,106 +1,63 @@
-# Inkwell — Full-Stack Blogging Platform
+# Inkwell
 
-Inkwell is a responsive blogging platform built with React, Vite, Tailwind CSS, Flask, and MongoDB. It includes a reader experience, publishing tools, user accounts, and role-protected administration. Blog content, categories, users, comments, and likes are loaded from MongoDB; the interface does not use seeded/fake blog posts.
+Inkwell is a server-rendered blogging platform built with Flask, Jinja, SQLite, Flask-Login, Flask-WTF, and Bootstrap. Readers can find stories by title, topic, or tag; members can publish and manage stories, like posts, and comment; administrators can manage members, posts, and topics.
 
 ## Requirements
 
 - Python 3.10 or newer
-- Node.js 20.13 or newer and npm (for the frontend)
-- MongoDB Community Server or a MongoDB Atlas connection string
-- SMTP credentials to send password-reset emails
 
-## Quick start
+## Run locally
 
-1. Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env`. Set `MONGODB_URI` and replace `JWT_SECRET` with a random secret of at least 32 characters.
-2. Install backend and frontend dependencies:
+1. Create and activate a virtual environment:
 
-   ```sh
+   ```powershell
    python -m venv .venv
-   # Windows PowerShell: .venv\Scripts\Activate.ps1
-   # macOS/Linux: source .venv/bin/activate
-   pip install -r backend/requirements.txt
-   npm install --prefix frontend
-   npm install
+   .venv\Scripts\Activate.ps1
    ```
 
-3. Start MongoDB. The backend creates the configured database collections as needed and inserts the seven starter categories if they do not already exist.
-4. Start Flask and the frontend together:
+2. Install dependencies:
 
-   ```sh
-   npm run dev
+   ```powershell
+   python -m pip install -r requirements.txt
    ```
 
-   The frontend is served at `http://localhost:5173`; the Flask API listens at `http://localhost:5000`.
+3. Copy `.env.example` to `.env`. Set `SECRET_KEY` to a long, random value. SQLite and the starter topics are initialized automatically.
+4. Start the website:
 
-To run either side individually, use `python backend/app.py` or `npm run dev --prefix frontend`. For production, build the frontend with `npm run build` and start the API with `npm start`.
+   ```powershell
+   python app.py
+   ```
 
-Run the backend smoke tests with `python -m unittest discover -s backend -p "test_*.py"`.
+   Visit `http://127.0.0.1:5000`.
 
-## Environment
+The database is created at `instance/blog.db`. Uploaded cover images are stored in `static/uploads/` and are limited to 5 MB.
 
-`backend/.env.example` documents the Flask API settings:
+## Create an administrator
 
-- `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`
-- `CLIENT_URL`, `PORT`
-- `UPLOAD_DIR`, `MAX_FILE_SIZE_MB`
-- Optional `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` for password reset
+Create a regular account through the website, then run:
 
-Install Python dependencies from `backend/requirements.txt`. `frontend/.env.example` documents `VITE_API_URL`. Configure the frontend and backend origins consistently when deploying. Uploaded images are stored on the API server under `backend/uploads` by default; use persistent storage or an object-storage service when deploying to ephemeral hosts.
-
-## First administrator
-
-Registration always creates a regular user. Create or promote an administrator from the repository root:
-
-```sh
-python backend/scripts/create_admin.py admin@example.com "Site Admin" "a-long-unique-password"
+```powershell
+flask --app app create-admin
 ```
 
-The command requires the backend environment file and enforces a 12-character minimum password. It hashes the password before saving it.
+Follow the prompts. The command promotes an existing account by email or creates a new administrator account. Administrator passwords must be at least 12 characters.
 
-## Features
+## Tests
 
-- Email/password registration and login, JWT sessions, bcrypt password hashing, protected routes, and admin role authorization
-- Profile and password updates; expiring, single-use password reset links delivered through SMTP
-- Published stories and drafts, ownership-protected editing/deletion, categories, tags, excerpts, image uploads, and estimated reading time
-- Search across title, excerpt, body, and tags; category filtering, latest/oldest sorting, and pagination
-- Likes, comments, related stories, and profile photos
-- Personal writing dashboard and admin dashboards for users, stories, categories, and platform statistics
-- Responsive reader interface, light/dark theme, loading/error states, and toast notifications
+```powershell
+python -m unittest discover -s tests -v
+```
 
-## API overview
-
-All routes are prefixed with `/api`.
-
-| Area | Routes |
-| --- | --- |
-| Authentication | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PATCH /auth/profile`, `PATCH /auth/password`, `POST /auth/forgot-password`, `POST /auth/reset-password/:token` |
-| Stories | `GET /blogs`, `GET /blogs/:slug`, `POST /blogs`, `PATCH /blogs/:id`, `DELETE /blogs/:id`, `POST /blogs/:slug/like` |
-| Comments | `GET /blogs/:slug/comments`, `POST /blogs/:slug/comments`, `DELETE /blogs/comments/:id` |
-| Categories | `GET /categories`; admin-only `POST`, `PATCH /:id`, and `DELETE /:id` |
-| Uploads | Authenticated `POST /uploads` with multipart field `image` |
-| Administration | Admin-only `GET /admin/stats`, `/admin/users`, `/admin/blogs`; user role and deletion routes |
-| Health | `GET /health` |
-
-`GET /blogs` accepts `search`, `category`, `sort=latest|oldest`, `page`, and `limit`. Authenticated requests may use `mine=true` and `status=draft|published|all` to list their own stories.
-
-## Project layout
+## Project structure
 
 ```text
-backend/
-  app.py            Flask REST API and MongoDB integration
-  requirements.txt  Python dependencies
-  scripts/          Administrator setup command
-  uploads/         Local image uploads
-frontend/
-  src/
-    components/    Shared navigation, cards, and loading UI
-    context/       Authentication and toast contexts
-    pages/         Reader, author, authentication, and admin screens
-    services/      Axios API client
+app.py                  Flask routes and application setup
+config.py               Environment-based configuration
+models.py               SQLite models and relationships
+forms.py                Validated, CSRF-protected forms
+seed.py                 Starter-topic CLI command
+templates/              Jinja pages
+static/css/style.css    Responsive styling
+static/uploads/         Uploaded cover images
+instance/blog.db        Local SQLite database (created on first run)
 ```
-
-## Notes
-
-- Reset-password emails are unavailable until SMTP is configured; the API returns a clear service-configuration error rather than exposing reset tokens.
-- The default upload handler accepts JPEG, PNG, WebP, and GIF files up to 5 MB. Configure limits using `MAX_FILE_SIZE_MB`.
-- The health endpoint verifies that the API process is responsive; database connectivity and starter categories are checked during API startup.

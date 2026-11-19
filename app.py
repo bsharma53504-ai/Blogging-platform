@@ -17,6 +17,7 @@ from flask import (
     request,
     url_for,
 )
+from flask.cli import with_appcontext
 from flask_login import (
     LoginManager,
     current_user,
@@ -25,7 +26,7 @@ from flask_login import (
     logout_user,
 )
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
@@ -67,7 +68,12 @@ def create_app(test_config=None):
 
     @app.context_processor
     def inject_categories():
-        return {"site_categories": Category.query.order_by(Category.name.asc()).all()}
+        from datetime import date
+
+        return {
+            "site_categories": Category.query.order_by(Category.name.asc()).all(),
+            "current_year": date.today().year,
+        }
 
     @app.errorhandler(403)
     def forbidden(_error):
@@ -317,7 +323,7 @@ def create_app(test_config=None):
         form = CategoryForm()
         if form.validate_on_submit():
             name = form.name.data.strip()
-            if Category.query.filter(db.func.lower(Category.name) == name.lower()).first():
+            if Category.query.filter(func.lower(Category.name) == name.lower()).first():
                 flash("That category already exists.", "danger")
             else:
                 db.session.add(Category(name=name))
@@ -385,6 +391,8 @@ def admin_required(view):
     return wrapped
 
 
+@click.command("create-admin")
+@with_appcontext
 def create_admin_command():
     """Create or promote an administrator account."""
     email = click.prompt("Email").strip().lower()
@@ -436,6 +444,18 @@ def _save_image(upload):
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if extension not in current_app.config["ALLOWED_IMAGE_EXTENSIONS"]:
         flash("Choose a JPG, PNG, WebP, or GIF image.", "danger")
+        return None
+    header = upload.stream.read(12)
+    upload.stream.seek(0)
+    signatures = {
+        "jpg": header.startswith(b"\xff\xd8\xff"),
+        "jpeg": header.startswith(b"\xff\xd8\xff"),
+        "png": header.startswith(b"\x89PNG\r\n\x1a\n"),
+        "gif": header.startswith((b"GIF87a", b"GIF89a")),
+        "webp": header.startswith(b"RIFF") and header[8:12] == b"WEBP",
+    }
+    if not signatures[extension]:
+        flash("The uploaded file does not match its image type.", "danger")
         return None
     unique_name = f"{uuid4().hex}.{extension}"
     upload.save(Path(current_app.config["UPLOAD_FOLDER"]) / unique_name)
