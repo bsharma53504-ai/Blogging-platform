@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} · Inkwell{% endblock %}
+{% block content %}
+<section class="form-page">
+    <div class="form-page-heading">
+        <a class="back-link" href="{{ url_for('dashboard') }}">← Your stories</a>
+        <span class="eyebrow">{{ eyebrow }}</span>
+        <h1>{{ heading }}<span class="accent-dot">.</span></h1>
+        <p>Take your time. Good stories are worth telling well.</p>
+    </div>
+    <div class="editor-card">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="form-field">{{ form.title.label(class="form-label") }}{{ form.title(class="form-control form-control-lg", placeholder="Give your story a title") }}{% for error in form.title.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+            <div class="editor-fields-row">
+                <div class="form-field">{{ form.category_id.label(class="form-label") }}{{ form.category_id(class="form-select") }}{% for error in form.category_id.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+                <div class="form-field">{{ form.tags.label(class="form-label") }}{{ form.tags(class="form-control", placeholder="creativity, learning, life") }}<small class="form-hint">Separate tags with commas.</small>{% for error in form.tags.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+            </div>
+            <div class="form-field">
+                <label class="form-label" for="image">Cover image <span class="form-hint-inline">optional · JPG, PNG, WebP or GIF · max 5 MB</span></label>
+                {% if post and post.image_path %}<div class="current-image"><img src="{{ url_for('static', filename=post.image_path) }}" alt="Current story cover"></div>{% endif %}
+                <input class="form-control" id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
+            </div>
+            <div class="form-field">{{ form.content.label(class="form-label") }}{{ form.content(class="form-control story-textarea", rows="16", placeholder="Every story starts with a first line...") }}{% for error in form.content.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+            <div class="editor-submit-row">{{ form.submit(class="btn btn-ink") }}<a class="btn btn-outline-ink" href="{{ url_for('dashboard') }}">Cancel</a></div>
+        </form>
+    </div>
+</section>
+{% endblock %}

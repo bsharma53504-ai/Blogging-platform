@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Your profile · Inkwell{% endblock %}
+{% block content %}
+<section class="form-page">
+    <div class="form-page-heading">
+        <span class="eyebrow">YOUR ACCOUNT</span>
+        <h1>A few details<span class="accent-dot">.</span></h1>
+        <p>Keep your profile up to date for the Inkwell community.</p>
+    </div>
+    <div class="editor-card">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="form-field">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control") }}{% for error in form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+            <div class="form-field">{{ form.email.label(class="form-label") }}{{ form.email(class="form-control") }}{% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}</div>
+            {{ form.submit(class="btn btn-ink") }}
+        </form>
+    </div>
+</section>
+{% endblock %}

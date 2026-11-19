@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · Inkwell{% endblock %}
+{% block content %}
+<section class="error-page">
+    <span class="error-code">{{ code }}</span>
+    <span class="eyebrow">A LITTLE DETOUR</span>
+    <h1>{{ message }}</h1>
+    <a class="btn btn-ink" href="{{ url_for('index') }}">Back to the stories</a>
+</section>
+{% endblock %}

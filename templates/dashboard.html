@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}My stories · Inkwell{% endblock %}
+{% block content %}
+<section class="container dashboard-page">
+    <div class="dashboard-heading">
+        <div>
+            <span class="eyebrow">YOUR WRITING DESK</span>
+            <h1>Good to see you, {{ current_user.username }}<span class="accent-dot">.</span></h1>
+            <p>All your ideas, gathered in one place.</p>
+        </div>
+        <a class="btn btn-ink" href="{{ url_for('create_post') }}">＋ Write a story</a>
+    </div>
+    <div class="dashboard-stat-row">
+        <div class="dashboard-stat"><strong>{{ posts|length }}</strong><span>{{ "story" if posts|length == 1 else "stories" }} published</span></div>
+        <div class="dashboard-stat"><strong>{{ posts|sum(attribute="like_count") }}</strong><span>appreciations</span></div>
+    </div>
+    <div class="table-responsive dashboard-table-wrap">
+        <table class="table dashboard-table align-middle">
+            <thead><tr><th>Story</th><th>Topic</th><th>Published</th><th>Engagement</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for post in posts %}
+                    <tr>
+                        <td><a class="table-story-title" href="{{ url_for('post_detail', post_id=post.id) }}">{{ post.title }}</a></td>
+                        <td><span class="topic-pill">{{ post.category.name }}</span></td>
+                        <td>{{ post.created_at.strftime("%b %d, %Y") }}</td>
+                        <td>♡ {{ post.like_count }} <span class="text-muted">·</span> {{ post.comments|length }} comments</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="table-action" href="{{ url_for('edit_post', post_id=post.id) }}">Edit</a>
+                                <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" onsubmit="return confirm('Delete this story?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="table-action danger-action" type="submit">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5"><div class="table-empty"><h3>Your next story starts here.</h3><p>You haven’t published anything yet.</p><a href="{{ url_for('create_post') }}">Write your first story →</a></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

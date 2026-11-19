@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Discover stories · Inkwell{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-copy">
+            <span class="eyebrow"><span class="eyebrow-mark">✳</span> A community of curious minds</span>
+            <h1>Good ideas deserve<br>to be <em>read.</em></h1>
+            <p>Thoughtful stories, fresh perspectives, and the people behind them. Find your next read—or write one yourself.</p>
+            {% if current_user.is_authenticated %}
+                <a class="btn btn-ink btn-lg" href="{{ url_for('create_post') }}">Write a story <span aria-hidden="true">↗</span></a>
+            {% else %}
+                <a class="btn btn-ink btn-lg" href="{{ url_for('register') }}">Find your voice <span aria-hidden="true">↗</span></a>
+            {% endif %}
+            <span class="hero-note">A little corner of the internet for big thoughts.</span>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+            <div class="hero-art-card">
+                <span class="hero-art-kicker">THE DAILY NOTE</span>
+                <div class="hero-art-lines"><i></i><i></i><i></i><i></i></div>
+                <div class="hero-art-circle"></div>
+                <span class="hero-art-caption">Ideas grow<br>when shared.</span>
+            </div>
+            <span class="hero-spark spark-one">✳</span>
+            <span class="hero-spark spark-two">✳</span>
+        </div>
+    </div>
+</section>
+
+<section class="container stories-section">
+    <div class="section-heading">
+        <div>
+            <span class="eyebrow">THE INKWELL JOURNAL</span>
+            <h2>{% if search %}Stories about “{{ search }}”{% else %}The latest stories<span class="accent-dot">.</span>{% endif %}</h2>
+        </div>
+        <span class="story-count">{{ pagination.total }} {{ "story" if pagination.total == 1 else "stories" }}</span>
+    </div>
+
+    <form class="search-panel" method="get" action="{{ url_for('index') }}">
+        <label class="search-input-wrap">
+            <span class="visually-hidden">Search stories</span>
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input type="search" name="q" value="{{ search }}" placeholder="Search stories, ideas, topics...">
+        </label>
+        <label class="category-select-wrap">
+            <span class="visually-hidden">Filter by topic</span>
+            <select name="category" aria-label="Filter by topic">
+                <option value="">All topics</option>
+                {% for category in site_categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="btn btn-ink" type="submit">Explore</button>
+        {% if search or selected_category %}
+            <a class="clear-search" href="{{ url_for('index') }}">Clear</a>
+        {% endif %}
+    </form>
+
+    <div class="story-grid">
+        {% for post in posts %}
+            <article class="story-card">
+                <a class="story-card-image" href="{{ url_for('post_detail', post_id=post.id) }}">
+                    {% if post.image_path %}
+                        <img src="{{ url_for('static', filename=post.image_path) }}" alt="">
+                    {% else %}
+                        <span class="image-monogram">{{ "%02d"|format(loop.index + (pagination.page - 1) * 9) }}</span>
+                        <span class="image-decoration" aria-hidden="true">✳</span>
+                    {% endif %}
+                </a>
+                <div class="story-card-body">
+                    <div class="story-card-meta">
+                        <a href="{{ url_for('index', category=post.category_id) }}">{{ post.category.name }}</a>
+                        <span>·</span>
+                        <time datetime="{{ post.created_at.isoformat() }}">{{ post.created_at.strftime("%b %d, %Y") }}</time>
+                    </div>
+                    <h3><a href="{{ url_for('post_detail', post_id=post.id) }}">{{ post.title }}</a></h3>
+                    <p>{{ post.content|striptags|truncate(155) }}</p>
+                    <div class="story-card-footer">
+                        <span class="author-avatar">{{ post.author.username[0]|upper }}</span>
+                        <span class="author-name">{{ post.author.username }}</span>
+                        <span class="card-engagement">♡ {{ post.like_count }} <span class="engagement-divider">·</span> {{ post.comments|length }} comments</span>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="empty-state">
+                <span class="empty-icon">✳</span>
+                <h3>{% if search or selected_category %}No stories match that search.{% else %}The page is yours to fill.{% endif %}</h3>
+                <p>{% if search or selected_category %}Try a different search or browse all stories.{% else %}Be the first to share an idea with the community.{% endif %}</p>
+                {% if search or selected_category %}
+                    <a class="btn btn-outline-ink" href="{{ url_for('index') }}">Browse all stories</a>
+                {% elif current_user.is_authenticated %}
+                    <a class="btn btn-ink" href="{{ url_for('create_post') }}">Write your first story</a>
+                {% else %}
+                    <a class="btn btn-ink" href="{{ url_for('register') }}">Join Inkwell</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+        <nav class="pagination-wrap" aria-label="Story pages">
+            {% if pagination.has_prev %}
+                <a class="page-link-custom" href="{{ url_for('index', page=pagination.prev_num, q=search, category=selected_category) }}">← Previous</a>
+            {% endif %}
+            <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+                <a class="page-link-custom" href="{{ url_for('index', page=pagination.next_num, q=search, category=selected_category) }}">Next →</a>
+            {% endif %}
+        </nav>
+    {% endif %}
+</section>
+{% endblock %}

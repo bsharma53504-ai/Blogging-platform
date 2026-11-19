@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} · Inkwell{% endblock %}
+{% block content %}
+<article class="article-page">
+    <div class="article-topline"><a class="back-link" href="{{ url_for('index') }}">← All stories</a><span class="article-topic">{{ post.category.name }}</span></div>
+    <header class="article-header">
+        <div class="story-card-meta"><span>{{ post.category.name }}</span><span>·</span><time datetime="{{ post.created_at.isoformat() }}">{{ post.created_at.strftime("%B %d, %Y") }}</time></div>
+        <h1>{{ post.title }}</h1>
+        <div class="article-byline">
+            <span class="author-avatar author-avatar-large">{{ post.author.username[0]|upper }}</span>
+            <div><strong>{{ post.author.username }}</strong><span>Writer at Inkwell</span></div>
+            {% if current_user.is_authenticated and (current_user.id == post.user_id or current_user.is_admin) %}
+                <a class="btn btn-outline-ink btn-sm ms-auto" href="{{ url_for('edit_post', post_id=post.id) }}">Edit story</a>
+            {% endif %}
+        </div>
+    </header>
+    {% if post.image_path %}<div class="article-cover"><img src="{{ url_for('static', filename=post.image_path) }}" alt=""></div>{% endif %}
+    <div class="article-content">{{ post.content }}</div>
+    {% if post.tag_list %}<div class="article-tags">{% for tag in post.tag_list %}<a href="{{ url_for('index', q=tag) }}">#{{ tag }}</a>{% endfor %}</div>{% endif %}
+    <div class="article-reactions">
+        {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('like_post', post_id=post.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="like-button {% if post in current_user.liked_posts %}liked{% endif %}" type="submit">{% if post in current_user.liked_posts %}♥{% else %}♡{% endif %} Appreciate this · {{ post.like_count }}</button>
+            </form>
+        {% else %}
+            <a class="like-button" href="{{ url_for('login', next=url_for('post_detail', post_id=post.id)) }}">♡ Appreciate this · {{ post.like_count }}</a>
+        {% endif %}
+        <span>{{ post.comments|length }} {{ "thought" if post.comments|length == 1 else "thoughts" }} shared</span>
+    </div>
+    <section class="comments-section">
+        <span class="eyebrow">THE CONVERSATION</span>
+        <h2>Leave a thoughtful note<span class="accent-dot">.</span></h2>
+        {% if current_user.is_authenticated %}
+            <form class="comment-form" method="post" action="{{ url_for('add_comment', post_id=post.id) }}" novalidate>
+                {{ form.hidden_tag() }}
+                {{ form.content(class="form-control", rows="3", placeholder="Add something kind to the conversation...", maxlength="2000") }}
+                {% for error in form.content.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                {{ form.submit(class="btn btn-ink btn-sm") }}
+            </form>
+        {% else %}
+            <div class="comment-signin">Sign in to join the conversation. <a href="{{ url_for('login', next=url_for('post_detail', post_id=post.id)) }}">Sign in →</a></div>
+        {% endif %}
+        <div class="comment-list">
+            {% for comment in post.comments %}
+                <div class="comment-card">
+                    <span class="author-avatar">{{ comment.author.username[0]|upper }}</span>
+                    <div class="comment-body">
+                        <div class="comment-heading"><strong>{{ comment.author.username }}</strong><time>{{ comment.created_at.strftime("%b %d, %Y") }}</time></div>
+                        <p>{{ comment.content }}</p>
+                        {% if current_user.is_authenticated and (current_user.id == comment.user_id or current_user.is_admin) %}
+                            <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="table-action danger-action" type="submit">Delete comment</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="no-comments">No thoughts shared yet. Be the first.</p>
+            {% endfor %}
+        </div>
+    </section>
+</article>
+{% endblock %}

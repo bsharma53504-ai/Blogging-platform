@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Admin studio · Inkwell{% endblock %}
+{% block content %}
+<section class="container admin-page">
+    <div class="dashboard-heading">
+        <div><span class="eyebrow">THE BACKSTAGE</span><h1>Admin studio<span class="accent-dot">.</span></h1><p>Keep the community thoughtful and thriving.</p></div>
+        <span class="admin-badge">✳ Administrator</span>
+    </div>
+    <div class="admin-stats">
+        <div class="admin-stat"><span>Community</span><strong>{{ stats.users }}</strong><small>members</small></div>
+        <div class="admin-stat"><span>Stories</span><strong>{{ stats.posts }}</strong><small>published</small></div>
+        <div class="admin-stat"><span>Conversations</span><strong>{{ stats.comments }}</strong><small>comments</small></div>
+    </div>
+    <div class="admin-grid">
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><span class="eyebrow">THE PEOPLE HERE</span><h2>Members</h2></div><span>{{ users|length }} total</span></div>
+            <div class="admin-list">
+                {% for user in users %}
+                    <div class="admin-row">
+                        <span class="author-avatar">{{ user.username[0]|upper }}</span>
+                        <div class="admin-row-copy"><strong>{{ user.username }}</strong><small>{{ user.email }}</small></div>
+                        <span class="role-badge {% if user.is_admin %}role-admin{% endif %}">{{ "Admin" if user.is_admin else "Member" }}</span>
+                        {% if user.id != current_user.id %}
+                            <div class="admin-row-actions">
+                                <form method="post" action="{{ url_for('update_user_role', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="table-action" type="submit">{{ "Remove admin" if user.is_admin else "Make admin" }}</button></form>
+                                <form method="post" action="{{ url_for('admin_delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete this member and all their stories?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="table-action danger-action" type="submit">Delete</button></form>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}<p class="no-comments">No members found.</p>{% endfor %}
+            </div>
+        </section>
+        <section class="admin-panel">
+            <div class="admin-panel-heading"><div><span class="eyebrow">THE WORDS WE SHARE</span><h2>Stories</h2></div><span>{{ posts|length }} total</span></div>
+            <div class="admin-list">
+                {% for post in posts %}
+                    <div class="admin-row admin-story-row">
+                        <div class="admin-row-copy"><a href="{{ url_for('post_detail', post_id=post.id) }}"><strong>{{ post.title }}</strong></a><small>by {{ post.author.username }} · {{ post.category.name }}</small></div>
+                        <form method="post" action="{{ url_for('admin_delete_post', post_id=post.id) }}" onsubmit="return confirm('Delete this story?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="table-action danger-action" type="submit">Delete</button></form>
+                    </div>
+                {% else %}<p class="no-comments">No stories published yet.</p>{% endfor %}
+            </div>
+        </section>
+        <section class="admin-panel category-panel">
+            <div class="admin-panel-heading"><div><span class="eyebrow">FIND YOUR SUBJECT</span><h2>Topics</h2></div><span>{{ categories|length }} total</span></div>
+            <form class="category-form" method="post" action="{{ url_for('create_category') }}">
+                {{ category_form.hidden_tag() }}
+                {{ category_form.name(class="form-control", placeholder="A new topic...") }}
+                {{ category_form.submit(class="btn btn-ink btn-sm") }}
+            </form>
+            <div class="category-chip-list">{% for category in categories %}<span class="topic-pill">{{ category.name }} · {{ category.posts|length }}</span>{% endfor %}</div>
+        </section>
+    </div>
+</section>
+{% endblock %}
